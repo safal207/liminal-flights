@@ -1,0 +1,27 @@
+name: Web UI checks
+on:
+  pull_request:
+    paths: ['web/**', '.github/workflows/web-ci.yml']
+  push:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/web-ci.yml']
+permissions:
+  contents: read
+jobs:
+  ui-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: node --check web/app.js
+      - name: Mock fare unit tests
+        run: node --test web/tests/core.test.mjs
+      - name: Static HTML / assets smoke
+        run: |
+          test -f web/index.html
+          test -f web/styles.css
+          test -f web/core.mjs
+          grep -q 'Демо · без живых цен' web/index.html
