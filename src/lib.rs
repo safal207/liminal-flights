@@ -1,3 +1,5 @@
+pub mod providers;
+
 //! Liminal Flights MVP: deterministic time-constrained search over complete,
 //! independently purchasable offers (rather than guessing segment fares).
 //! All prices are party totals, in EUR cents, in this offline demonstration.
