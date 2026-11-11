@@ -1,0 +1,8 @@
+[package]
+name = "liminal-flights"
+version = "0.1.0"
+edition = "2021"
+description = "Offline, deterministic flight offer graph search proof-of-concept"
+publish = false
+
+[dependencies]
