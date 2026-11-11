@@ -6,3 +6,13 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 @media(max-width:360px){.search-fields,.search-fields:has(.return-field:not([hidden])){grid-template-columns:1fr}.route-fields,.travelers-field{grid-column:1/-1!important}.date-field{grid-column:1/-1}.field-input-wrap input[type=date]{font-size:16px}}
+
+
+/* Accessible language picker: full-size touch targets, consistent position. */
+.header-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.language-switch{display:flex;align-items:center;gap:3px;border:1px solid #dae7dc;background:#f0f5ef;border-radius:13px;padding:3px}
+.language-btn{min-width:44px;min-height:44px;padding:8px 9px;border:0;border-radius:10px;color:#56776c;background:transparent;font-size:12px;letter-spacing:.35px;font-weight:800}
+.language-btn.is-active{background:#fff;color:#1b4d46;box-shadow:0 2px 7px #26564616}
+.language-btn:hover:not(.is-active){background:#e4eee6}
+@media(max-width:760px){.site-header{gap:8px}.header-actions{gap:0}.header-actions .demo-chip{display:none}.language-switch{padding:2px;gap:2px}.language-btn{min-width:44px;min-height:44px}}
+@media(max-width:360px){.brand-text strong{font-size:17px}.brand-mark{width:36px;height:36px;border-radius:12px}.brand{gap:7px}.language-btn{min-width:42px;min-height:44px}}
