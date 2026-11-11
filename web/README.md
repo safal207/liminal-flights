@@ -1,6 +1,6 @@
 # Liminal Flights Web — mobile-first frontend demo
 
-No build step and no external runtime dependencies. Open with any static HTTP server:
+No build step. Main search UI has no external runtime dependencies. The optional flight map lazily loads Leaflet 1.9.4 and browser-visible OpenStreetMap tiles **only after the user opens a route map**. An embedded geographic sketch remains available when offline or when remote maps fail. Open with any static HTTP server:
 
 ```sh
 python3 -m http.server 8080 --directory web
@@ -35,6 +35,34 @@ node --test web/tests/*.test.mjs
 node --check web/app.js
 ```
 
+## Flight map preview
+
+Every demonstration itinerary has a **View map / На карте / Haritada gör** action.
+On mobile, it opens a bottom-sheet dialog showing an approximate route and
+mock stop airports. The sketch works without remote services.
+
+The path follows a great-circle approximation between fictional example
+waypoints, not the real filed airway route. **No actual aircraft position,
+delays, schedules or arrival predictions are supplied.** A moving aircraft
+icon is intentionally absent until verified live flight IDs and licensed
+positions exist. This distinction is reflected in all three languages.
+
+For an interactive geographic basemap, the user may open a map manually.
+Leaflet 1.9.4 is pinned with SRI; raster map tiles are fetched from the
+standard OSM endpoint with visible copyright attribution. Do not bulk
+download, prefetch or use the community tile servers as a production SLA.
+Public operation requires its own mapping provider/terms review, visible
+attribution, and a contactable project owner.
+
+See [flight tracking provider review](../docs/FLIGHT_MAP_AND_TRACKING.md).
+Tests:
+
+```sh
+node --test web/tests/*.test.mjs
+node --check web/flight-map.mjs
+node --check web/flight-map-ui.mjs
+```
+
 ## UI priorities
 
 - Warm, calm visual language; no large blocking hero art on mobile.
@@ -42,7 +70,7 @@ node --check web/app.js
 - Large tap targets (44px minimum on mobile), visible keyboard focus, predictable state and reduced-motion support.
 - Three ranking modes, price for the **full passenger group**, honest self-transfer warnings.
 - Local-only saved searches; no false promise of push or commercial bookings.
-- No external fonts, runtime packages, tracking, or image dependencies; maintain static asset URLs relative to `web/` for GitHub Pages subpath compatibility.
+- No external fonts, analytics tracking or image dependencies in the initial search page. The optional on-demand map uses Leaflet / OSM; maintain static asset URLs relative to `web/` for GitHub Pages subpath compatibility.
 
 ## Verify
 

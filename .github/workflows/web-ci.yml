@@ -19,6 +19,8 @@ jobs:
         run: |
           node --check web/app.js
           node --check web/i18n.mjs
+          node --check web/flight-map.mjs
+          node --check web/flight-map-ui.mjs
       - name: Mock fare unit tests
         run: node --test web/tests/*.test.mjs
       - name: Static HTML / assets smoke
@@ -26,4 +28,6 @@ jobs:
           test -f web/index.html
           test -f web/styles.css
           test -f web/core.mjs
+          test -f web/flight-map.mjs
+          test -f web/flight-map-ui.mjs
           grep -q 'Демо · без живых цен' web/index.html
