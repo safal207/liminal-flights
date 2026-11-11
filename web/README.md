@@ -11,19 +11,21 @@ The website ships **only synthetic routes** for GZP→MOW and AYT→MOW. All tim
 
 ## Languages
 
-The entire demo UI is available in **Russian (RU)** and **English (EN)** via
+The entire demo UI is available in **Russian (RU)**, **English (EN)** and **Turkish (TR)** via
 the 44px header language switch on desktop and mobile.
 
-- The saved preference in localStorage takes precedence; otherwise English
-  browsers start in English and all other browsers default to Russian.
+- The saved preference in localStorage takes precedence; browsers configured
+  for English or Turkish start in their respective language; others default to Russian.
 - All static headings, input labels, ARIA labels, options, helper text, footer,
-  passenger stepper and navigation are translated.
+  passenger stepper and navigation are translated, including the 320px mobile header.
 - Dynamically generated route cards, hypothetical fare descriptions, warnings,
   empty states, validation messages, saved route actions, price and duration
   formats are translated too; routes, dates, sort order and saved state persist
   through language changes.
 - Translating interface text never changes the original fare calculation,
   demonstrates real inventory or claims availability.
+- Turkish airport names, fare tags, risk descriptions and locale-specific EUR
+  prices/durations are translated without altering synthetic fare arithmetic.
 - No remote translation API or extra client dependencies.
 
 Tests:
