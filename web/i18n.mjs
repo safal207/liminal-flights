@@ -1,8 +1,9 @@
-// RU/EN copy for a static, offline-only flight demo.
+// RU/EN/TR copy for a static, offline-only flight demo.
 // Russian static text is the initial DOM source. No external translation service.
 import { AIRPORT_NAMES } from './core.mjs';
+import { staticTr, messagesTr, airportNamesTr, offerCopyTr } from './i18n-tr.mjs';
 
-export const LANGUAGES = Object.freeze(['ru', 'en']);
+export const LANGUAGES = Object.freeze(['ru', 'en', 'tr']);
 export const normalizeLanguage = value => LANGUAGES.includes(value) ? value : 'ru';
 
 const staticEn = Object.freeze({
@@ -96,6 +97,7 @@ const staticEn = Object.freeze({
   'Язык сайта': 'Website language',
   'Русский язык': 'Russian',
   'Английский язык': 'English',
+  'Турецкий язык': 'Turkish',
   'Liminal Flights — путь, который вам подходит': 'Liminal Flights — your route, your choice',
   'Liminal Flights — удобный поиск маршрутов и понятные причины выбора. Пока работает на демонстрационных данных.': 'Liminal Flights — a calmer way to compare routes and understand trade-offs. Demo fares only.'
 });
@@ -180,7 +182,8 @@ const messages = Object.freeze({
     saveNotice: 'Demo route saved in this browser.',
     storageDenied: 'Browser storage is unavailable. Your selection will be lost after reloading.',
     langChanged: 'Interface language changed to English.'
-  }
+  },
+  tr: messagesTr
 });
 const airportNamesEn = Object.freeze({
   GZP:'Gazipaşa', AYT:'Antalya', MOW:'Moscow', VKO:'Vnukovo',
@@ -207,18 +210,24 @@ export function translate(key, ...args) {
   return typeof value === 'function' ? value(...args) : value;
 }
 export function airportLabel(code) {
+  if (currentLanguage === 'tr') return airportNamesTr[code] || code;
   return currentLanguage === 'en' ? airportNamesEn[code] || code : AIRPORT_NAMES[code] || code;
 }
 export function offerCopy(offer) {
+  if (currentLanguage === 'tr') return offerCopyTr[offer.id] || {tag:offer.tag,note:offer.note};
   return currentLanguage === 'en' ? offerCopyEn[offer.id] || {tag:offer.tag,note:offer.note}
     : {tag:offer.tag,note:offer.note};
 }
 export function staticTranslation(source, lang) {
-  return normalizeLanguage(lang) === 'en' ? staticEn[source] || source : source;
+  const target = normalizeLanguage(lang);
+  if (target === 'tr') return staticTr[source] || source;
+  return target === 'en' ? staticEn[source] || source : source;
 }
 export function initialLanguage(saved, navigatorLanguage) {
   if (LANGUAGES.includes(saved)) return saved;
-  return /^en(?:[-_]|$)/i.test(String(navigatorLanguage || '')) ? 'en' : 'ru';
+  const browserLanguage = String(navigatorLanguage || '');
+  if (/^tr(?:[-_]|$)/i.test(browserLanguage)) return 'tr';
+  return /^en(?:[-_]|$)/i.test(browserLanguage) ? 'en' : 'ru';
 }
 export function localizeStaticDocument(doc) {
   // Capture original static nodes once, before results rendering replaces placeholders.
@@ -229,13 +238,13 @@ export function localizeStaticDocument(doc) {
   while ((node = walker.nextNode())) {
     const original = node.nodeValue;
     const trimmed = original.trim();
-    if (staticEn[trimmed]) entries.push({node,original,trimmed});
+    if (staticEn[trimmed] || staticTr[trimmed]) entries.push({node,original,trimmed});
   }
   const attrs = [];
   for (const element of root.querySelectorAll('[aria-label],[title],meta[name=description]')) {
     for (const attr of ['aria-label','title','content']) {
       const original = element.getAttribute(attr);
-      if (original && staticEn[original]) attrs.push({element,attr,original});
+      if (original && (staticEn[original] || staticTr[original])) attrs.push({element,attr,original});
     }
   }
   return lang => {
