@@ -2,6 +2,8 @@
 //! independently purchasable offers (rather than guessing segment fares).
 //! All prices are party totals, in EUR cents, in this offline demonstration.
 
+pub mod providers;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
     Flight,
