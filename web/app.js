@@ -1,5 +1,6 @@
 import {MOCK_ROUTES, normalizeAirport, totalMinor, availableDemoOffers, sortOffers, formatEur, formatMinutes} from './core.mjs';
 import {language, useLanguage, initialLanguage, localizeStaticDocument, translate, airportLabel, offerCopy} from './i18n.mjs';
+import {mapText,openRouteMap} from './flight-map-ui.mjs';
 const el=id=>document.getElementById(id);
 const languageStorageKey='liminal-flights-language-v1';
 let storedLanguage=null;
@@ -98,6 +99,8 @@ function cardHTML(offer,q){
     '<div class="flight-attributes"><span class="'+(offer.protected?'':'warning')+'">'+safe(type)+'</span>'+
     '<span>'+safe(translate('bagCount',q.bags))+'</span></div>'+
     '<div class="flight-reason"><strong>'+safe(translate('why'))+'</strong> '+safe(copy.note)+'</div>'+
+    '<div class="route-map-actions"><button type="button" class="route-map-open" data-map="'+safe(offer.id)+'">'+
+    '<span aria-hidden="true">⌖</span> '+safe(mapText(language(),'open'))+'</button></div>'+
     '<div class="flight-price-area"><div><small>'+safe(translate('partyTotal'))+'</small>'+
     '<span class="flight-price">'+safe(formatEur(cost,language()))+'</span></div>'+
     '<button type="button" class="save-button" data-save="'+safe(offer.id)+'" aria-pressed="'+isSaved+'">'+
@@ -130,6 +133,12 @@ function showEmpty(title,message){
   box.append(h,p);results.append(box);
 }
 results.addEventListener('click',event=>{
+  const mapButton=event.target.closest('[data-map]');
+  if(mapButton){
+    const offer=MOCK_ROUTES.find(item=>item.id===mapButton.dataset.map);
+    if(offer)openRouteMap(offer,language(),mapButton);
+    return;
+  }
   const btn=event.target.closest('[data-save]');
   if(!btn)return;
   const offer=MOCK_ROUTES.find(item=>item.id===btn.dataset.save);
