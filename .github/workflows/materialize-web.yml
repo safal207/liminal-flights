@@ -2,7 +2,7 @@ name: Materialize reviewed web preview
 on:
   push:
     branches: [feat/cozy-responsive-web-v01]
-    paths: ['.bundle/web.tar.xz.base64', '.github/workflows/materialize-web.yml']
+    paths: ['.bundle/p3', '.github/workflows/materialize-web.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -18,7 +18,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base64 --decode .bundle/web.tar.xz.base64 > /tmp/lf-web.tar.xz
+          cat .bundle/p1 .bundle/p2 .bundle/p3 | base64 --decode > /tmp/lf-web.tar.xz
           echo '5317b1e390b23ef639455c7ce45d34a5f8b0368b9ac3469028974dd38144fc53  /tmp/lf-web.tar.xz' | sha256sum -c -
           tar -tJf /tmp/lf-web.tar.xz | grep -E '^(/|.*/\.\./)' && exit 1 || true
           tar -xJf /tmp/lf-web.tar.xz
