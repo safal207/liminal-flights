@@ -28,10 +28,15 @@ export function sortOffers(offers, criterion, passengers, bags) {
     return score(a)-score(b) || a.id.localeCompare(b.id);
   });
 }
-export const formatEur = (minor, language='ru') =>
-  new Intl.NumberFormat(language === 'en' ? 'en-GB' : 'ru-RU',
+export const formatEur = (minor, language='ru') => {
+  const locale = language === 'en' ? 'en-GB' : language === 'tr' ? 'tr-TR' : 'ru-RU';
+  return new Intl.NumberFormat(locale,
     {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(minor/100);
-export const formatMinutes = (minutes, language='ru') =>
-  language === 'en'
-    ? Math.floor(minutes/60) + 'h ' + minutes%60 + 'm'
-    : Math.floor(minutes/60) + ' ч ' + minutes%60 + ' мин';
+};
+export const formatMinutes = (minutes, language='ru') => {
+  const hours = Math.floor(minutes/60);
+  const remainder = minutes%60;
+  if (language === 'en') return hours + 'h ' + remainder + 'm';
+  if (language === 'tr') return hours + ' sa ' + remainder + ' dk';
+  return hours + ' ч ' + remainder + ' мин';
+};
