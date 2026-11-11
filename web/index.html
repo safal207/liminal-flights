@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fbf8f3">
+  <meta name="description" content="Liminal Flights — удобный поиск маршрутов и понятные причины выбора. Пока работает на демонстрационных данных.">
+  <title>Liminal Flights — путь, который вам подходит</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%231e4b50'/%3E%3Cpath d='m12 36 40-17-12 23-6-12-22 6z' fill='%23f9dfb0'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#search">Перейти к поиску</a>
+  <div class="site-shell">
+    <header class="site-header container">
+      <a class="brand" href="#top" aria-label="Liminal Flights — на главную">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="m5 18 23-11-7 18-5-9-11 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 25c4 3 9 3 13 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+        <span class="brand-text"><strong>liminal<span>flights</span></strong><small>умный путь домой и дальше</small></span>
+      </a>
+      <nav class="desktop-nav" aria-label="Основное меню">
+        <a href="#how-it-works">Как это работает</a>
+        <a href="#saved">Сохранённое <span id="saved-count" class="count-dot">0</span></a>
+      </nav>
+      <span class="demo-chip"><span aria-hidden="true" class="chip-dot"></span> Демо · без живых цен</span>
+    </header>
+
+    <main id="top">
+      <section class="hero container" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✳</span> Уютный способ планировать путешествие</p>
+          <h1 id="hero-title">Не просто билет.<br><em>Ваш лучший маршрут.</em></h1>
+          <p class="hero-description">Сравнивайте не только цены. Смотрите на пересадки, багаж и время в пути — чтобы выбирать спокойно.</p>
+          <div class="hero-benefits"><span>✓ Цена за всех</span><span>✓ Понятные пересадки</span><span>✓ Без сюрпризов*</span></div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="sun"></div><div class="cloud cloud-one"></div><div class="cloud cloud-two"></div>
+          <svg class="air-route" viewBox="0 0 450 260" fill="none" preserveAspectRatio="xMidYMid meet"><path d="M22 191C130 242 229 13 429 83" stroke="#fff9eb" stroke-width="2.5" stroke-dasharray="5 9" stroke-linecap="round"/><circle cx="22" cy="191" r="6" fill="#fff9eb"/><circle cx="429" cy="83" r="6" fill="#fff9eb"/><path d="m258 67 40-15-13 19-9-7-18 3z" fill="#fff9eb" transform="rotate(-8 280 64)"/></svg>
+          <div class="visual-label label-one">Вместе лететь легче <span>♡</span></div>
+          <div class="visual-label label-two">GZP <span>↗</span> MOW</div>
+          <div class="hills hill-back"></div><div class="hills hill-front"></div>
+        </div>
+      </section>
+
+      <section class="search-section container" id="search" aria-labelledby="search-title">
+        <div class="search-card">
+          <div class="search-head"><div><p class="section-kicker">НАЧНИТЕ С МАРШРУТА</p><h2 id="search-title">Куда полетим?</h2></div><span class="calm-tag">Всё важное — в одном месте</span></div>
+          <form id="flight-form" novalidate>
+            <div class="trip-picker" role="group" aria-label="Тип поездки">
+              <label class="trip-option"><input type="radio" name="trip" value="one-way" checked><span>В одну сторону</span></label>
+              <label class="trip-option"><input type="radio" name="trip" value="round-trip"><span>Туда-обратно</span></label>
+            </div>
+            <div class="search-fields">
+              <div class="route-fields">
+                <label class="field"><span class="field-label">Откуда</span><span class="field-input-wrap"><span class="field-symbol" aria-hidden="true">↗</span><input id="origin" name="origin" list="airport-options" value="GZP" required maxlength="3" autocomplete="off" inputmode="text" aria-describedby="airport-help"><span class="field-meta">Аэропорт вылета</span></span></label>
+                <button type="button" id="swap" class="swap-button" title="Поменять местами" aria-label="Поменять аэропорты местами">⇄</button>
+                <label class="field"><span class="field-label">Куда</span><span class="field-input-wrap"><span class="field-symbol" aria-hidden="true">⌖</span><input id="destination" name="destination" list="airport-options" value="MOW" required maxlength="3" autocomplete="off" aria-describedby="airport-help"><span class="field-meta">Город или аэропорт</span></span></label>
+              </div>
+              <label class="field date-field"><span class="field-label">Вылет</span><span class="field-input-wrap"><span class="field-symbol" aria-hidden="true">▦</span><input id="departure" name="departure" type="date" required></span></label>
+              <label class="field date-field return-field" id="return-field" hidden><span class="field-label">Обратно</span><span class="field-input-wrap"><span class="field-symbol" aria-hidden="true">▦</span><input id="return-date" name="return-date" type="date"></span></label>
+              <div class="field travelers-field"><span class="field-label">Пассажиры</span><button class="traveler-trigger" id="traveler-trigger" type="button" aria-expanded="false" aria-controls="traveler-panel"><span class="field-symbol" aria-hidden="true">♧</span><span id="traveler-summary">2 взрослых · 2 детей</span><span class="chevron" aria-hidden="true">⌄</span></button>
+                <div id="traveler-panel" class="traveler-panel" hidden>
+                  <div class="stepper-row"><div><strong>Взрослые</strong><small>От 12 лет</small></div><div class="stepper"><button type="button" data-person="adults" data-step="-1" aria-label="Уменьшить число взрослых">−</button><output id="adults-count">2</output><button type="button" data-person="adults" data-step="1" aria-label="Увеличить число взрослых">+</button></div></div>
+                  <div class="stepper-row"><div><strong>Дети</strong><small>От 2 до 11 лет</small></div><div class="stepper"><button type="button" data-person="children" data-step="-1" aria-label="Уменьшить число детей">−</button><output id="children-count">2</output><button type="button" data-person="children" data-step="1" aria-label="Увеличить число детей">+</button></div></div>
+                  <div class="stepper-row"><div><strong>Младенцы</strong><small>До 2 лет</small></div><div class="stepper"><button type="button" data-person="infants" data-step="-1" aria-label="Уменьшить число младенцев">−</button><output id="infants-count">0</output><button type="button" data-person="infants" data-step="1" aria-label="Увеличить число младенцев">+</button></div></div>
+                  <p class="traveler-hint">В демо тарифы рассчитываются условно. Реальные возрастные правила определяет авиакомпания.</p>
+                  <button type="button" class="small-primary" id="traveler-done">Готово</button>
+                </div>
+              </div>
+            </div>
+            <datalist id="airport-options"><option value="GZP">Газипаша</option><option value="AYT">Анталья</option><option value="MOW">Москва — все аэропорты</option><option value="VKO">Внуково</option><option value="IST">Стамбул</option><option value="SVO">Шереметьево</option><option value="DME">Домодедово</option></datalist>
+            <p class="sr-only" id="airport-help">Введите трёхбуквенный IATA-код города или аэропорта.</p>
+            <div class="search-bottom"><label class="bag-select">Багаж <select id="bags" name="bags" aria-label="Количество единиц регистрируемого багажа"><option value="0">Без багажа</option><option value="1">1 место</option><option value="2" selected>2 места</option><option value="3">3 места</option></select></label><button class="primary-button" type="submit"><span>Найти подходящие рейсы</span><span class="button-arrow" aria-hidden="true">↗</span></button></div>
+          </form>
+        </div>
+      </section>
+
+      <section id="results" class="results-section container" aria-labelledby="results-title">
+        <div class="results-intro"><div><p class="section-kicker">СРАВНИВАЙТЕ БЕЗ СПЕШКИ</p><h2 id="results-title">Варианты для вас</h2><p class="results-subtitle" id="results-summary">Учебные предложения для маршрута Газипаша → Москва</p></div><span class="demo-notice">ⓘ Все цены и рейсы вымышлены</span></div>
+        <div class="results-controls" role="group" aria-label="Сортировка предложений"><button type="button" class="sort-btn is-active" data-sort="balanced" aria-pressed="true">✳ Лучший баланс</button><button type="button" class="sort-btn" data-sort="cheapest" aria-pressed="false">↓ Дешевле</button><button type="button" class="sort-btn" data-sort="fastest" aria-pressed="false">↗ Быстрее</button></div>
+        <p id="announcement" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+        <div id="results-list" class="results-grid"></div>
+      </section>
+
+      <section id="saved" class="saved-section container" aria-labelledby="saved-title"><div class="saved-inner"><div><p class="section-kicker">ВЕРНЁМСЯ К ЭТОМУ</p><h2 id="saved-title">Ваши сохранённые варианты</h2><p>Сохраняются только в этом браузере. Уведомления о реальных ценах пока не подключены.</p></div><div id="saved-list" class="saved-list"><p class="empty-saved">Здесь появятся маршруты, которые вам понравились.</p></div></div></section>
+
+      <section id="how-it-works" class="how-section container"><div><p class="section-kicker">КАК МЫ ДУМАЕМ</p><h2>Спокойный поиск.<br><em>Осознанный выбор.</em></h2></div><div class="how-grid"><article><span class="how-icon">01</span><h3>Считаем всё вместе</h3><p>Показываем сумму за всю группу, а не красивую цену за одного.</p></article><article><span class="how-icon">02</span><h3>Объясняем разницу</h3><p>Вы видите, почему вариант быстрее, дешевле или удобнее.</p></article><article><span class="how-icon">03</span><h3>Не скрываем риски</h3><p>Самостоятельная пересадка не маскируется под защищённую.</p></article></div></section>
+    </main>
+    <footer class="site-footer container"><div class="footer-brand">liminal<span>flights</span></div><p>* Пока это интерфейс с синтетическими предложениями, не поисковик доступных к покупке билетов.</p><a href="https://github.com/safal207/liminal-flights" target="_blank" rel="noopener noreferrer">Открытый код ↗</a></footer>
+  </div>
+  <nav class="mobile-dock" aria-label="Быстрая навигация"><a href="#search"><span aria-hidden="true">⌕</span><small>Поиск</small></a><a href="#results"><span aria-hidden="true">✈</span><small>Рейсы</small></a><a href="#saved"><span aria-hidden="true">♡</span><small>Сохранено</small></a></nav>
+</body>
+</html>
