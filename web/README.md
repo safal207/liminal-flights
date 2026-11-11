@@ -9,6 +9,30 @@ python3 -m http.server 8080 --directory web
 
 The website ships **only synthetic routes** for GZP→MOW and AYT→MOW. All times, prices, airline offers, all-in passenger amounts and luggage assumptions are fictional. The frontend never requests live flight inventory, accepts payments, or claims to send price alerts. Round-trips and unlisted corridors show an honest empty state.
 
+## Languages
+
+The entire demo UI is available in **Russian (RU)** and **English (EN)** via
+the 44px header language switch on desktop and mobile.
+
+- The saved preference in localStorage takes precedence; otherwise English
+  browsers start in English and all other browsers default to Russian.
+- All static headings, input labels, ARIA labels, options, helper text, footer,
+  passenger stepper and navigation are translated.
+- Dynamically generated route cards, hypothetical fare descriptions, warnings,
+  empty states, validation messages, saved route actions, price and duration
+  formats are translated too; routes, dates, sort order and saved state persist
+  through language changes.
+- Translating interface text never changes the original fare calculation,
+  demonstrates real inventory or claims availability.
+- No remote translation API or extra client dependencies.
+
+Tests:
+
+```sh
+node --test web/tests/*.test.mjs
+node --check web/app.js
+```
+
 ## UI priorities
 
 - Warm, calm visual language; no large blocking hero art on mobile.
