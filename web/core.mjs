@@ -28,5 +28,10 @@ export function sortOffers(offers, criterion, passengers, bags) {
     return score(a)-score(b) || a.id.localeCompare(b.id);
   });
 }
-export const formatEur = minor => new Intl.NumberFormat('ru-RU',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(minor/100);
-export const formatMinutes = minutes => `${Math.floor(minutes/60)} ч ${minutes%60} мин`;
+export const formatEur = (minor, language='ru') =>
+  new Intl.NumberFormat(language === 'en' ? 'en-GB' : 'ru-RU',
+    {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(minor/100);
+export const formatMinutes = (minutes, language='ru') =>
+  language === 'en'
+    ? Math.floor(minutes/60) + 'h ' + minutes%60 + 'm'
+    : Math.floor(minutes/60) + ' ч ' + minutes%60 + ' мин';
