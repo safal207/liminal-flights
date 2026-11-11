@@ -19,7 +19,7 @@ jobs:
         run: |
           set -euo pipefail
           base64 --decode .bundle/web.tar.xz.base64 > /tmp/lf-web.tar.xz
-          echo 'df8c0c6c09e82bf678ec7142fa651ceef0dfd1f2b8b1f2bf2a553d9d217f9b31  /tmp/lf-web.tar.xz' | sha256sum -c -
+          echo '5317b1e390b23ef639455c7ce45d34a5f8b0368b9ac3469028974dd38144fc53  /tmp/lf-web.tar.xz' | sha256sum -c -
           tar -tJf /tmp/lf-web.tar.xz | grep -E '^(/|.*/\.\./)' && exit 1 || true
           tar -xJf /tmp/lf-web.tar.xz
           test -f web/index.html
