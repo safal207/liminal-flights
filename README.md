@@ -32,6 +32,22 @@ The `cargo test` suite checks graph reachability, self-transfer buffer, party-to
 - This bounded DFS is intentionally small and easy to inspect; production needs time-expanded indexing + multicriteria label setting + offer/hyperedge constraints.
 - A real Flight Watch worker needs consent, rate-limit-aware permitted API access, reprice, deduplication, quiet hours and correct Web Push handling.
 
+
+## Provider contract (PR / development)
+
+The Rust module [src/providers.rs](src/providers.rs) models source permissions,
+normalized **atomic** single-ticket offers, party totals, quote expiry and an
+offline mock reprice flow. This is **not** a live API adapter, booking engine or
+approved price-monitoring integration. Mock fixtures are explicitly fictional.
+
+- [Provider licensing / access matrix](docs/PROVIDER_ACCESS.md) — Duffel
+  sandbox is the provisional developer target; commercial and background
+  monitoring rights are still unverified.
+- Search and refresh are different operations. Even a refreshed supplier
+  offer is not a guarantee of successful booking.
+- Without explicit supplier permissions, **no live monitoring, quote
+  storage or cross-provider fare combination is enabled**.
+
 ## Roadmap
 
 **Pilot:** GZP/AYT → Moscow (all destination airports), 1–4+ passengers, flexible dates, baggage, safe transfers, configurable alerts; expand geographically after measuring results.
