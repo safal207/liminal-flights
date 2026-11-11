@@ -14,7 +14,7 @@ Install the Rust toolchain and run:
 cargo generate-lockfile
 cargo run --locked
 cargo test --locked
-cargo fmt --all -- --check
+cargo fmt --all -- --check # Optional style check; not yet CI-gated
 cargo clippy --all-targets --locked -- -D warnings
 ```
 
@@ -52,4 +52,4 @@ See `docs/PRODUCT_SPEC.md` for requirements, causal protocol integration and con
 - [MVP backlog and release gates](docs/BACKLOG.md)
 - [Research and product specification](docs/PRODUCT_SPEC.md)
 
-The dependency-free starter includes `Cargo.lock`. Regenerate it with `cargo generate-lockfile` if the manifest changes. The Rust code has not been compiled or verified in this workspace; GitHub Actions will be the first executable gate once the repository is published.
+The dependency-free starter includes `Cargo.lock`. Regenerate it with `cargo generate-lockfile` if the manifest changes. The Rust code was not compiled locally in the authoring workspace. GitHub Actions now runs `cargo check`, `cargo test` and strict `cargo clippy` on each push and PR; inspect the latest run before treating the build as passing. Rustfmt is not yet enforced by CI.
