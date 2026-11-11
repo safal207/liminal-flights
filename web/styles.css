@@ -16,3 +16,14 @@
 .language-btn:hover:not(.is-active){background:#e4eee6}
 @media(max-width:760px){.site-header{gap:8px}.header-actions{gap:0}.header-actions .demo-chip{display:none}.language-switch{padding:2px;gap:2px}.language-btn{min-width:44px;min-height:44px}}
 @media(max-width:360px){.brand-text strong{font-size:17px}.brand-mark{width:36px;height:36px;border-radius:12px}.brand{gap:7px}.language-btn{min-width:42px;min-height:44px}}
+
+
+/* RU / EN / TR picker: avoid header overflow on narrow Turkish mobile screens. */
+.language-switch{flex-shrink:0;white-space:nowrap}
+@media(max-width:360px){
+  .site-header .brand-mark{display:none}
+  .site-header .brand-text small{display:none}
+  .site-header .brand-text strong{font-size:17px}
+  .site-header .language-btn{min-width:42px;padding-inline:4px}
+  .site-header .header-actions{flex-shrink:0}
+}
