@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {createLocalFunnel,CLIENT_EVENTS,SERVER_EVENTS,validateEvent,utmFromQuery,summarizeFunnel} from '../funnel.mjs';
 import {buildDemoShareUrl,parseDemoShare,conversionText} from '../conversion.mjs';
 import {MOCK_ROUTES} from '../core.mjs';
@@ -89,4 +90,16 @@ test('selection and local-metrics disclaimers exist in RU/EN/TR',()=>{
   assert.match(conversionText('ru','caveat'),/не бронирование/);
   assert.match(conversionText('en','debugHint'),/Only this browser tab/);
   assert.match(conversionText('tr','caveat'),/rezervasyon değildir/);
+});
+
+test('first-screen funnel controls have honest affordances and no fake purchase CTA',()=>{
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.match(html, /data-priority="balanced"/);
+  assert.match(html, /data-priority="cheapest"/);
+  assert.match(html, /data-priority="fastest"/);
+  assert.match(html, /value="round-trip" disabled/);
+  assert.match(html, /Посмотреть примеры маршрутов/);
+  assert.match(html, /id="selected-option"/);
+  assert.match(html, /Демо: билеты пока нельзя купить/);
+  assert.doesNotMatch(html, /<button[^>]*>(?:Купить билет|Оплатить)<\/button>/);
 });
