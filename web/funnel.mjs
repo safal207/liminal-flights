@@ -12,7 +12,7 @@ export const SERVER_EVENTS=Object.freeze(['partner_outbound','booking_confirmed'
 const ALLOWED_FIELDS=Object.freeze({
   landing_view:[],
   priority_selected:['priority'],
-  search_submitted:['origin','destination','trip','priority','passengers','bags'],
+  search_submitted:['search_index','origin','destination','trip','priority','passengers','bags'],
   search_invalid:['reason'],
   offer_impression:['offer_id','rank','origin','destination','priority','search_index'],
   offer_selected:['offer_id','rank','origin','destination','priority','search_index'],
