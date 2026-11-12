@@ -82,3 +82,36 @@
   .route-map-detail-grid{gap:6px}
 }
 @media(prefers-reduced-motion:reduce){.route-map-leaflet,.route-map-open{transition:none!important}}
+
+
+/* Personal journey map — leg focus + source-aware information, mobile first. */
+.journey-context{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 13px}
+.journey-context>span{display:flex;align-items:baseline;gap:7px;background:#f5f8f3;border:1px solid #e5ede4;border-radius:11px;padding:9px 12px}
+.journey-context small{font-size:11px;color:#799085}
+.journey-context strong{font-size:12px;color:#365e54}
+.route-map-leg-control{padding:15px 0 4px}
+.route-map-leg-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:7px}
+.route-map-leg-header strong{font-size:14px;color:#2b5850}
+.route-map-leg-header span{font-size:11px;color:#83978b}
+.route-map-leg-buttons{display:flex;flex-wrap:wrap;gap:9px;margin:11px 0 0}
+.route-leg-button{min-height:46px;padding:10px 14px;border-radius:12px;border:1px solid #dae5db;background:#fff;color:#4d7167;font-weight:750;font-size:12px}
+.route-leg-button.is-active{background:#2a6157;border-color:#2a6157;color:#fff;box-shadow:0 5px 13px #315d5024}
+.route-leg-button:hover:not(.is-active){background:#edf5ef}
+.journey-evidence{border:1px solid #e3eadf;border-radius:17px;padding:15px;background:#fffefa;margin-top:16px}
+.journey-evidence-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.journey-evidence-heading h3{font-size:15px;margin:0 0 5px;color:#34574e}
+.journey-evidence-heading p{max-width:450px;font-size:12px;line-height:1.6;color:#70867c;margin:0}
+.journey-evidence-chip{font-size:10px;font-weight:800;line-height:1.35;color:#8c6945;background:#fff0dc;border:1px solid #efd9b9;border-radius:10px;max-width:170px;padding:9px 10px;text-align:center}
+.journey-evidence .route-map-detail-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:15px}
+@media(max-width:760px){
+ .journey-evidence-heading{display:block}
+ .journey-evidence-chip{display:inline-block;margin-top:9px}
+ .journey-evidence .route-map-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .route-map-leg-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .route-leg-button{padding:10px 7px}
+}
+@media(max-width:360px){
+ .journey-evidence .route-map-detail-grid{grid-template-columns:1fr}
+ .route-map-leg-header{display:block}
+ .route-map-leg-header span{display:block;margin-top:5px}
+}
