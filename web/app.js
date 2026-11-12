@@ -206,7 +206,22 @@ results.addEventListener('click',event=>{
   const mapButton=event.target.closest('[data-map]');
   if(mapButton){
     const offer=MOCK_ROUTES.find(item=>item.id===mapButton.dataset.map);
-    if(offer)openRouteMap(offer,language(),mapButton,lastQuery);
+    if(offer&&openRouteMap(offer,language(),mapButton,lastQuery)){
+      track('map_opened',{offer_id:offer.id,rank:Number(mapButton.closest('[data-rank]')?.dataset.rank)||0,search_index:searchIndex});
+    }
+    return;
+  }
+  const chooseButton=event.target.closest('[data-choose]');
+  if(chooseButton){
+    const offer=MOCK_ROUTES.find(item=>item.id===chooseButton.dataset.choose);
+    if(!offer)return;
+    selectedOfferId=offer.id;
+    track('offer_selected',{
+      offer_id:offer.id,rank:Number(chooseButton.closest('[data-rank]')?.dataset.rank)||0,
+      origin:lastQuery.origin,destination:lastQuery.destination,priority:sort,search_index:searchIndex
+    });
+    renderResults();
+    announce(conversionText(language(),'selected'));
     return;
   }
   const btn=event.target.closest('[data-save]');
@@ -218,13 +233,92 @@ results.addEventListener('click',event=>{
   if(saved.has(key)){saved.delete(key);notice=translate('unsaved');}
   else{
     saved.set(key,{key,route:offer.from+' → '+offer.airport,date:lastQuery.date});
+    track('offer_saved',{offer_id:offer.id,search_index:searchIndex});
     notice=translate('saveNotice');
   }
   if(!storageWrite())notice=translate('storageDenied');
   renderSaved();renderResults();announce(notice);
 });
-form.addEventListener('submit',event=>{event.preventDefault();setPanel(false);lastQuery=currentQuery();renderResults();el('results').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});});
-for(const btn of document.querySelectorAll('.sort-btn'))btn.addEventListener('click',()=>{sort=btn.dataset.sort;for(const item of document.querySelectorAll('.sort-btn')){const active=item===btn;item.classList.toggle('is-active',active);item.setAttribute('aria-pressed',String(active));}renderResults();});
+el('selected-option').addEventListener('click',async event=>{
+  const chosen=MOCK_ROUTES.find(offer=>offer.id===selectedOfferId);
+  if(!chosen)return;
+  const mapButton=event.target.closest('[data-selected-map]');
+  if(mapButton){
+    if(openRouteMap(chosen,language(),mapButton,lastQuery)){
+      track('map_opened',{offer_id:chosen.id,search_index:searchIndex});
+    }
+    return;
+  }
+  const shareButton=event.target.closest('[data-selected-share]');
+  if(!shareButton)return;
+  let url;
+  try{url=buildDemoShareUrl(window.location.href,chosen,lastQuery);}catch{return;}
+  const info=conversionText(language(),'shareIntro')+': '+chosen.from+' → '+chosen.airport;
+  let shared=false;
+  try{
+    if(typeof navigator.share==='function'){
+      await navigator.share({title:'Liminal Flights',text:info,url});
+      shared=true;
+    }else if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(info+' · '+url);
+      shared=true;
+    }
+  }catch{/* Canceled share or unavailable clipboard. */}
+  const panel=el('selected-option');
+  if(panel.hidden)return;
+  const message=panel.querySelector('.share-feedback'),field=panel.querySelector('.share-link');
+  if(shared){
+    track('offer_shared',{offer_id:chosen.id,search_index:searchIndex});
+    message.textContent=conversionText(language(),'shared');
+    field.hidden=true;
+  }else{
+    message.textContent=conversionText(language(),'shareFailed');
+    field.hidden=false;
+    field.value=url;
+    field.focus();
+    field.select();
+  }
+});
+form.addEventListener('submit',event=>{
+  event.preventDefault();setPanel(false);
+  lastQuery=currentQuery();
+  const error=validateQuery(lastQuery);
+  if(error||lastQuery.trip!=='one-way'){
+    track('search_invalid',{reason:error?'invalid_form':'unsupported_trip'});
+    renderResults();return;
+  }
+  selectedOfferId=null;
+  searchIndex++;
+  impressionKeys.clear();
+  track('search_submitted',{
+    search_index:searchIndex,origin:lastQuery.origin,destination:lastQuery.destination,
+    trip:lastQuery.trip,priority:sort,
+    passengers:lastQuery.party.adults+lastQuery.party.children+lastQuery.party.infants,
+    bags:lastQuery.bags
+  });
+  renderResults();
+  el('results').scrollIntoView({
+    behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',
+    block:'start'
+  });
+});
+function setSort(next,byUser=false){
+  if(!['balanced','cheapest','fastest'].includes(next))return;
+  sort=next;
+  for(const item of document.querySelectorAll('.sort-btn, .priority-btn')){
+    const active=(item.dataset.sort||item.dataset.priority)===sort;
+    item.classList.toggle('is-active',active);
+    item.setAttribute('aria-pressed',String(active));
+  }
+  if(byUser)track('priority_selected',{priority:sort});
+  renderResults();
+}
+for(const btn of document.querySelectorAll('.sort-btn')){
+  btn.addEventListener('click',()=>setSort(btn.dataset.sort,true));
+}
+for(const btn of document.querySelectorAll('.priority-btn')){
+  btn.addEventListener('click',()=>setSort(btn.dataset.priority,true));
+}
 
 function updateLanguageButtons(){
   for(const btn of document.querySelectorAll('[data-language]')){
