@@ -1,7 +1,24 @@
 import {MOCK_ROUTES, normalizeAirport, totalMinor, availableDemoOffers, sortOffers, formatEur, formatMinutes} from './core.mjs';
 import {language, useLanguage, initialLanguage, localizeStaticDocument, translate, airportLabel, offerCopy} from './i18n.mjs';
 import {mapText,openRouteMap} from './flight-map-ui.mjs';
+import {createLocalFunnel} from './funnel.mjs';
+import {conversionText,buildDemoShareUrl,parseDemoShare} from './conversion.mjs';
 const el=id=>document.getElementById(id);
+let funnelStorage=null;
+try{funnelStorage=window.sessionStorage;}catch{/* Tracking stays in memory in private mode. */}
+const funnel=createLocalFunnel({storage:funnelStorage,search:window.location.search});
+let debugFunnel=null;
+function track(type,fields={}){
+  const event=funnel.record(type,fields);
+  if(debugFunnel)debugFunnel();
+  return event;
+}
+track('landing_view');
+let searchIndex=0;
+let impressionObserver=null;
+const impressionKeys=new Set();
+const deepLink=parseDemoShare(window.location.search);
+let selectedOfferId=deepLink?.id||null;
 const languageStorageKey='liminal-flights-language-v1';
 let storedLanguage=null;
 try {storedLanguage=localStorage.getItem(languageStorageKey);} catch { /* Storage is optional. */ }
@@ -19,6 +36,15 @@ function validYMD(date){return /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN
 function localDate(offset=0){const d=new Date(); d.setDate(d.getDate()+offset);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 const dep=el('departure'), returnDate=el('return-date');
 dep.min=localDate();dep.value=localDate(7);returnDate.min=dep.value;returnDate.value=localDate(14);
+if(deepLink){
+  el('origin').value=deepLink.origin;
+  el('destination').value=deepLink.destination;
+  if(deepLink.date&&deepLink.date>=localDate())dep.value=deepLink.date;
+  returnDate.min=dep.value;
+  if(returnDate.value<dep.value)returnDate.value=dep.value;
+  if(deepLink.party)Object.assign(party,deepLink.party);
+  if(deepLink.bags!==undefined)el('bags').value=String(deepLink.bags);
+}
 dep.addEventListener('change',()=>{returnDate.min=dep.value;if(returnDate.value<dep.value)returnDate.value=dep.value;});
 function selectedTrip(){return form.querySelector('input[name="trip"]:checked').value;}
 for(const input of form.querySelectorAll('input[name="trip"]'))input.addEventListener('change',()=>{const isReturn=selectedTrip()==='round-trip';el('return-field').hidden=!isReturn;returnDate.required=isReturn;});
