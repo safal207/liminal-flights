@@ -7,6 +7,17 @@ export const LANGUAGES = Object.freeze(['ru', 'en', 'tr']);
 export const normalizeLanguage = value => LANGUAGES.includes(value) ? value : 'ru';
 
 const staticEn = Object.freeze({
+  'Найдём удобный перелёт.': 'Find a comfortable flight.',
+  'Для всей семьи.': 'For the whole family.',
+  'Сравним общую стоимость, багаж, пересадки и время в пути — чтобы выбирать спокойно.': 'Compare total cost, baggage, connections and journey time with confidence.',
+  'Начать сравнение': 'Start comparing',
+  'Скоро': 'Coming soon',
+  'Что для вас важнее?': 'What matters most to you?',
+  'Удобнее с детьми': 'Easier with kids',
+  'Дешевле для всех': 'Lower total cost',
+  'Быстрее добраться': 'Arrive sooner',
+  'Посмотреть примеры маршрутов': 'Explore sample routes',
+  'Демо: билеты пока нельзя купить. Можно попробовать сравнение.': 'Demo only: tickets are not available to buy. Explore how comparisons work.',
   'Перейти к поиску': 'Skip to search',
   'Liminal Flights — на главную': 'Liminal Flights — home',
   'умный путь домой и дальше': 'thoughtful routes, calmer journeys',
