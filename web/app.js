@@ -108,18 +108,18 @@ function renderSaved(){
     list.append(node);
   }
 }
-function cardHTML(offer,q){
-  const cost=totalMinor(offer,q.party,q.bags);
-  const key=saveKey(offer,q),isSaved=saved.has(key);
+function cardHTML(offer,q,rank){
+  const cost=totalMinor(offer,q.party,q.bags),key=saveKey(offer,q);
+  const isSaved=saved.has(key),selected=selectedOfferId===offer.id;
   const type=offer.protected?translate('protected'):translate('selfTransfer');
   const copy=offerCopy(offer),safe=escapeHTML;
-  const tag= '<span class="flight-tag '+safe(offer.tagClass)+'">'+safe(copy.tag)+'</span>';
+  const tag='<span class="flight-tag '+safe(offer.tagClass)+'">'+safe(copy.tag)+'</span>';
   const first='<div class="flight-time"><strong>'+safe(offer.depart)+'</strong><small>'+safe(offer.from)+'</small></div>';
   const middle='<div class="journey-line"><span>'+safe(formatMinutes(offer.minutes,language()))+
     '</span><div class="line"></div><small>'+safe(offer.stops===0?translate('nonstop'):translate('oneStop'))+'</small></div>';
   const last='<div class="flight-time"><strong>'+safe(offer.arrive)+'</strong><small>'+safe(offer.airport)+'</small></div>';
   return '<article class="flight-card '+(offer.id.includes('balanced')?'featured':'')+
-    '" data-offer="'+safe(offer.id)+'">'+
+    (selected?' is-chosen':'')+'" data-offer="'+safe(offer.id)+'" data-rank="'+rank+'">'+
     '<div class="flight-card-head">'+tag+'<span class="flight-type">'+safe(translate('mockFare'))+'</span></div>'+
     '<div class="flight-times">'+first+middle+last+'</div>'+
     '<div class="flight-attributes"><span class="'+(offer.protected?'':'warning')+'">'+safe(type)+'</span>'+
@@ -131,24 +131,68 @@ function cardHTML(offer,q){
     '<span class="flight-price">'+safe(formatEur(cost,language()))+'</span></div>'+
     '<button type="button" class="save-button" data-save="'+safe(offer.id)+'" aria-pressed="'+isSaved+'">'+
     safe(isSaved?translate('saved'):translate('save'))+'</button></div>'+
+    '<button type="button" class="choose-button" data-choose="'+safe(offer.id)+'" aria-pressed="'+selected+'">'+
+    safe(conversionText(language(),selected?'chosen':'choose'))+' <span aria-hidden="true">↗</span></button>'+
     '<p class="card-caption">'+safe(translate('mockCardCaption'))+'</p></article>';
+}
+function recordImpressions(){
+  if(impressionObserver){impressionObserver.disconnect();impressionObserver=null;}
+  if(!searchIndex||typeof IntersectionObserver!=='function')return;
+  impressionObserver=new IntersectionObserver(entries=>{
+    for(const item of entries){
+      if(!item.isIntersecting)continue;
+      const card=item.target,id=card.dataset.offer,rank=Number(card.dataset.rank);
+      const key=[searchIndex,id,rank].join(':');
+      if(!impressionKeys.has(key)){
+        impressionKeys.add(key);
+        track('offer_impression',{
+          offer_id:id,rank,origin:lastQuery.origin,destination:lastQuery.destination,
+          priority:sort,search_index:searchIndex
+        });
+      }
+      impressionObserver?.unobserve(card);
+    }
+  },{threshold:0.5});
+  for(const card of results.querySelectorAll('.flight-card'))impressionObserver.observe(card);
+}
+function renderSelection(offers){
+  const panel=el('selected-option');
+  const chosen=offers.find(o=>o.id===selectedOfferId);
+  if(!chosen){panel.hidden=true;panel.replaceChildren();return;}
+  const safe=escapeHTML,t=key=>safe(conversionText(language(),key));
+  const cost=totalMinor(chosen,lastQuery.party,lastQuery.bags);
+  panel.hidden=false;
+  panel.innerHTML='<div class="selection-heading"><div><span class="selection-eyebrow">'+t('selected')+'</span>'+
+    '<h3 id="selected-option-title">'+t('panelTitle')+'</h3></div><span class="selection-chip">'+safe(chosen.from)+' → '+safe(chosen.airport)+'</span></div>'+
+    '<div class="selection-overview"><div><small>'+t('total')+'</small><strong>'+safe(formatEur(cost,language()))+'</strong></div>'+
+    '<p>'+safe(offerCopy(chosen).note)+'</p></div>'+
+    '<p class="selection-caveat">'+t('caveat')+'</p>'+
+    '<div class="selection-actions"><button type="button" data-selected-map class="selected-map">'+t('map')+'</button>'+
+    '<button type="button" data-selected-share class="selected-share">'+t('share')+'</button></div>'+
+    '<p class="share-feedback" role="status" aria-live="polite"></p>'+
+    '<input class="share-link" aria-label="Demo URL" readonly hidden>';
 }
 function renderResults(){
   const q=lastQuery,err=validateQuery(q);
+  if(impressionObserver){impressionObserver.disconnect();impressionObserver=null;}
   results.replaceChildren();
   el('results-summary').textContent=airportLabel(q.origin)+' → '+airportLabel(q.destination)+' · '+
     (q.date||translate('missingDate'))+' · '+partyText(q.party);
-  if(err){showEmpty(translate('checkParams'),err);announce(err);return;}
+  if(err){renderSelection([]);showEmpty(translate('checkParams'),err);announce(err);return;}
   if(q.trip==='round-trip'){
+    renderSelection([]);
     showEmpty(translate('roundTripTitle'),translate('roundTripBody'));
     announce(translate('roundTripNotice'));return;
   }
   const offers=sortOffers(availableDemoOffers(q.origin,q.destination,q.trip),sort,q.party,q.bags);
   if(!offers.length){
+    renderSelection([]);
     showEmpty(translate('noDemoTitle'),translate('noDemoBody'));
     announce(translate('noDemoNotice'));return;
   }
-  results.innerHTML=offers.map(offer=>cardHTML(offer,q)).join('');
+  results.innerHTML=offers.map((offer,i)=>cardHTML(offer,q,i+1)).join('');
+  renderSelection(offers);
+  recordImpressions();
   announce(translate('found',offers.length));
 }
 function partyText(p){return translate('countPassengers',p.adults+p.children+p.infants);}
