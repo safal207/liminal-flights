@@ -2,7 +2,8 @@
  * Flight route map: honest synthetic preview first, real tiles on explicit user
  * action only. Never animate/label a guessed aircraft as a live position.
  */
-import { flightPlan, planBounds, approximateDistanceKm } from './flight-map.mjs';
+import {planBounds} from './flight-map.mjs';
+import {selectedJourney,legSelection} from './journey-view.mjs';
 
 const copy={
   ru:{
@@ -18,7 +19,13 @@ const copy={
     close:'Закрыть карту',mapIssue:'Сообщить об ошибке карты',
     tiles:'Базовая карта загрузится при доступности интернет-соединения.',
     airport:'Аэропорт',from:'Откуда',to:'Куда',via:'Через',
-    fallback:'Схема маршрута (без онлайн-карты)'
+    fallback:'Схема маршрута (без онлайн-карты)',
+    chosen:'Ваш выбранный вариант',searchDate:'Дата поиска · демо',passengers:'Пассажиров',
+    legs:'Участки маршрута',allLegs:'Весь маршрут',legHelp:'Выберите участок, чтобы рассмотреть его на карте.',
+    trackingTitle:'Что известно о рейсе',unverified:'Данные о рейсе не поступали',
+    lastUpdate:'Последнее обновление',noUpdate:'Нет данных',delay:'Задержка',delayUnknown:'Неизвестна',
+    statusNote:'Ни статус рейса, ни его положение не проверялись: источник ещё не подключён.',
+    chosenLeg:'Выбранный участок'
   },
   en:{
     open:'View map ↗',title:'Route on the map',sub:'A visual preview of this flight option',
@@ -33,7 +40,13 @@ const copy={
     close:'Close map',mapIssue:'Report a map problem',
     tiles:'Online basemap appears when an internet connection is available.',
     airport:'Airport',from:'From',to:'To',via:'Via',
-    fallback:'Route sketch (offline mode)'
+    fallback:'Route sketch (offline mode)',
+    chosen:'Your selected journey',searchDate:'Search date · demo',passengers:'Travellers',
+    legs:'Journey segments',allLegs:'Entire route',legHelp:'Select a segment to focus the map on it.',
+    trackingTitle:'What we know about this flight',unverified:'No flight data received',
+    lastUpdate:'Last updated',noUpdate:'No data',delay:'Delay',delayUnknown:'Unknown',
+    statusNote:'Neither flight status nor aircraft location has been checked: no provider is connected.',
+    chosenLeg:'Selected segment'
   },
   tr:{
     open:'Haritada gör ↗',title:'Uçuş rotası haritası',sub:'Seçtiğiniz uçuşun görsel önizlemesi',
@@ -48,12 +61,18 @@ const copy={
     close:'Haritayı kapat',mapIssue:'Harita hatası bildir',
     tiles:'İnternet bağlantısı varsa harita altlığı yüklenir.',
     airport:'Havalimanı',from:'Nereden',to:'Nereye',via:'Aktarma',
-    fallback:'Rota çizimi (çevrimdışı)'
+    fallback:'Rota çizimi (çevrimdışı)',
+    chosen:'Seçtiğiniz yolculuk',searchDate:'Arama tarihi · demo',passengers:'Yolcu sayısı',
+    legs:'Yolculuk etapları',allLegs:'Tüm rota',legHelp:'Haritada odaklanmak için bir etap seçin.',
+    trackingTitle:'Bu uçuş hakkında bildiklerimiz',unverified:'Uçuş verisi alınmadı',
+    lastUpdate:'Son güncelleme',noUpdate:'Veri yok',delay:'Gecikme',delayUnknown:'Bilinmiyor',
+    statusNote:'Veri kaynağı bağlı değil; uçuş durumu ve uçak konumu doğrulanmadı.',
+    chosenLeg:'Seçili etap'
   }
 };
 export const mapText=(language,key)=>(copy[language]||copy.ru)[key]||key;
 
-function svgFallback(plan,lang){
+function svgFallback(plan,lang,focus=-1){
   const bounds=planBounds(plan),low=bounds[0],high=bounds[1];
   const pad=46,width=760,height=365;
   const lonScale=Math.max(1,high[1]-low[1]),latScale=Math.max(1,high[0]-low[0]);
@@ -64,7 +83,7 @@ function svgFallback(plan,lang){
     const yy=pad+i*(height-pad*2)/5,xx=pad+i*(width-pad*2)/5;
     return '<path d="M'+xx.toFixed(1)+' '+pad+'V'+(height-pad)+' M'+pad+' '+yy.toFixed(1)+'H'+(width-pad)+'" stroke="#ffffff" stroke-opacity=".48"/>';
   }).join('');
-  const legs=plan.legs.map(leg=>'<path d="'+path(leg)+'" stroke="#2f6b65" stroke-width="4" stroke-dasharray="8 7" fill="none" stroke-linecap="round"/>').join('');
+  const legs=plan.legs.map((leg,i)=>'<path d="'+path(leg)+'" stroke="'+(focus>=0&&focus!==i?'#96b6ad':'#2f6b65')+'" stroke-width="'+(focus===i?'6':'4')+'" stroke-dasharray="8 7" fill="none" stroke-linecap="round" opacity="'+(focus>=0&&focus!==i?'.35':'1')+'"/>').join('');
   const pins=plan.airports.map((point,i)=>{
     const px=x(point.lon).toFixed(1),py=y(point.lat).toFixed(1);
     const dy=i===0?23:-17;
@@ -101,10 +120,11 @@ function loadLeaflet(){
   return leafletPromise;
 }
 let dialog=null,activeMap=null,activeId=null,requestId=0,lastFocus=null;
+let activePlan=null,activeLang='ru',activeLeg=-1,activeLines=[];
 function clearMap(){
   requestId++;
   if(activeMap){activeMap.remove();activeMap=null;}
-  activeId=null;
+  activeId=null;activeLines=[];activePlan=null;activeLeg=-1;
 }
 function buildDialog(){
   if(dialog)return dialog;
