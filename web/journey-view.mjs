@@ -2,7 +2,7 @@
  * Personalized map view model for a single selected (fictional) itinerary.
  * Never promote a search date to a confirmed flight occurrence.
  */
-import {flightPlan,planBounds,approximateDistanceKm} from './flight-map.mjs';
+import {flightPlan,planBounds,approximateDistanceKm,pathDistanceKm} from './flight-map.mjs';
 
 export function legSelection(plan,index=-1) {
   if(!plan||!Array.isArray(plan.legs)||!plan.legs.length)throw Error('Invalid journey');
@@ -12,16 +12,7 @@ export function legSelection(plan,index=-1) {
   const nodes=index===-1?plan.airports:[plan.airports[index],plan.airports[index+1]];
   return Object.freeze({
     index,legs,codes,nodes,bounds:planBounds({...plan,legs}),
-    distanceKm:Math.round(legs.reduce((sum,leg)=>{
-      let d=0;const R=6371;
-      for(let i=1;i<leg.length;i++){
-        const a=leg[i-1],b=leg[i],r=Math.PI/180;
-        const dl=(b[0]-a[0])*r,dn=(b[1]-a[1])*r;
-        const q=Math.sin(dl/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dn/2)**2;
-        d+=2*R*Math.atan2(Math.sqrt(q),Math.sqrt(Math.max(0,1-q)));
-      }
-      return d;
-    },0))
+    distanceKm:Math.round(legs.reduce((sum,leg)=>sum+pathDistanceKm(leg),0))
   });
 }
 
