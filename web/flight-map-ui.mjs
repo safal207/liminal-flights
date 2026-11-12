@@ -137,34 +137,78 @@ function buildDialog(){
   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
   return dialog;
 }
-function renderDialog(offer,plan,lang){
-  const d=buildDialog();
-  // All interpolations come from fixed app dictionaries and known airport codes.
+function renderDialog(journey,lang){
+  const {plan}=journey,d=buildDialog();
   const t=key=>mapText(lang,key);
   const route=plan.airports.map(point=>point.code).join(' · ');
   const stops=plan.airports.map((p,i)=>
     '<span class="route-map-stop"><strong>'+p.code+'</strong><small>'+
     (i===0?t('from'):i===plan.airports.length-1?t('to'):t('via'))+
     '</small></span>').join('<span aria-hidden="true" class="route-stop-arrow">→</span>');
+  const tripMeta=(journey.searchDate?
+    '<span><small>'+t('searchDate')+'</small><strong>'+journey.searchDate+'</strong></span>':'')+
+    (journey.passengers!==null?
+    '<span><small>'+t('passengers')+'</small><strong>'+journey.passengers+'</strong></span>':'');
+  const buttons=[
+    '<button type="button" class="route-leg-button is-active" data-route-leg="-1" aria-pressed="true">'+t('allLegs')+'</button>',
+    ...plan.legs.map((leg,i)=>'<button type="button" class="route-leg-button" data-route-leg="'+i+
+      '" aria-pressed="false">'+plan.airports[i].code+' → '+plan.airports[i+1].code+'</button>')
+  ].join('');
   d.innerHTML='<div class="route-map-shell">'+
     '<div class="route-map-header"><div><p class="route-map-eyebrow">'+t('mock')+'</p>'+
-    '<h2 id="route-map-title">'+t('title')+'</h2><p class="route-map-sub">'+t('sub')+'</p></div>'+
+    '<h2 id="route-map-title">'+t('chosen')+'</h2><p class="route-map-sub">'+t('sub')+'</p></div>'+
     '<button class="route-map-close" type="button" data-close-map aria-label="'+t('close')+'">×</button></div>'+
     '<div class="route-map-chips"><span class="route-chip">✈ '+route+'</span><span class="route-chip muted">'+t('notLive')+'</span></div>'+
+    (tripMeta?'<div class="journey-context">'+tripMeta+'</div>':'')+
     '<div class="route-map-stage"><div class="route-map-fallback">'+svgFallback(plan,lang)+'</div>'+
     '<div id="leaflet-flight-map" class="route-map-leaflet"></div></div>'+
+    '<div class="route-map-leg-control"><div class="route-map-leg-header"><strong>'+t('legs')+'</strong>'+
+    '<span>'+t('legHelp')+'</span></div>'+
+    '<div class="route-map-leg-buttons" role="group" aria-label="'+t('legs')+'">'+buttons+'</div></div>'+
     '<div class="route-map-stops">'+stops+'</div>'+
     '<p class="route-map-clarification">'+t('warning')+' '+t('plane')+'</p>'+
     (plan.independentTickets?'<p class="route-map-risk">'+t('separate')+'</p>':'')+
-    '<div class="route-map-detail-grid"><div><small>'+t('distance')+'</small><strong>'+
-    approximateDistanceKm(plan)+t('kilometers')+'</strong></div>'+
+    '<section class="journey-evidence" aria-labelledby="journey-evidence-title">'+
+    '<div class="journey-evidence-heading"><div><h3 id="journey-evidence-title">'+t('trackingTitle')+'</h3>'+
+    '<p>'+t('statusNote')+'</p></div><span class="journey-evidence-chip">'+t('unverified')+'</span></div>'+
+    '<div class="route-map-detail-grid"><div><small>'+t('distance')+'</small>'+
+    '<strong id="route-map-distance">'+journey.approximateDistanceKm+t('kilometers')+'</strong></div>'+
     '<div><small>'+t('status')+'</small><strong>'+t('statusNone')+'</strong></div>'+
-    '<div><small>'+t('location')+'</small><strong>'+t('locationNone')+'</strong></div></div>'+
+    '<div><small>'+t('delay')+'</small><strong>'+t('delayUnknown')+'</strong></div>'+
+    '<div><small>'+t('location')+'</small><strong>'+t('locationNone')+'</strong></div>'+
+    '<div><small>'+t('lastUpdate')+'</small><strong>'+t('noUpdate')+'</strong></div></div></section>'+
     '<div class="route-map-footer"><span>'+t('source')+'</span>'+
     '<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">'+t('mapIssue')+'</a></div>'+
     '</div>';
   d.querySelector('[data-close-map]').addEventListener('click',()=>d.close());
+  for(const button of d.querySelectorAll('[data-route-leg]')){
+    button.addEventListener('click',()=>focusLeg(Number(button.dataset.routeLeg)));
+  }
 }
+
+function focusLeg(index){
+  if(!activePlan||!dialog?.open)return;
+  const selection=legSelection(activePlan,index);
+  activeLeg=index;
+  const sketch=dialog.querySelector('.route-map-fallback');
+  if(sketch)sketch.innerHTML=svgFallback(activePlan,activeLang,index);
+  const distance=dialog.querySelector('#route-map-distance');
+  if(distance)distance.textContent=selection.distanceKm+mapText(activeLang,'kilometers');
+  for(const btn of dialog.querySelectorAll('[data-route-leg]')){
+    const selected=Number(btn.dataset.routeLeg)===index;
+    btn.classList.toggle('is-active',selected);
+    btn.setAttribute('aria-pressed',String(selected));
+  }
+  if(activeMap){
+    activeLines.forEach((line,i)=>line.setStyle({
+      color:index>=0&&index!==i?'#a0bdb3':'#28655c',
+      weight:index===i?6:4,
+      opacity:index>=0&&index!==i?.3:.92
+    }));
+    activeMap.fitBounds(selection.bounds,{padding:[34,42],maxZoom:7});
+  }
+}
+
 async function mountLeaflet(plan,lang,id){
   try{
     const L=await loadLeaflet();
