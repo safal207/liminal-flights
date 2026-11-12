@@ -73,7 +73,9 @@ const copy={
 export const mapText=(language,key)=>(copy[language]||copy.ru)[key]||key;
 
 function svgFallback(plan,lang,focus=-1){
-  const bounds=planBounds(plan),low=bounds[0],high=bounds[1];
+  const visibleLegs=focus>=0?[plan.legs[focus]]:plan.legs;
+  const visibleAirports=focus>=0?[plan.airports[focus],plan.airports[focus+1]]:plan.airports;
+  const bounds=planBounds({...plan,legs:visibleLegs}),low=bounds[0],high=bounds[1];
   const pad=46,width=760,height=365;
   const lonScale=Math.max(1,high[1]-low[1]),latScale=Math.max(1,high[0]-low[0]);
   const x=lon=>pad+(lon-low[1])/lonScale*(width-pad*2);
@@ -83,8 +85,8 @@ function svgFallback(plan,lang,focus=-1){
     const yy=pad+i*(height-pad*2)/5,xx=pad+i*(width-pad*2)/5;
     return '<path d="M'+xx.toFixed(1)+' '+pad+'V'+(height-pad)+' M'+pad+' '+yy.toFixed(1)+'H'+(width-pad)+'" stroke="#ffffff" stroke-opacity=".48"/>';
   }).join('');
-  const legs=plan.legs.map((leg,i)=>'<path d="'+path(leg)+'" stroke="'+(focus>=0&&focus!==i?'#96b6ad':'#2f6b65')+'" stroke-width="'+(focus===i?'6':'4')+'" stroke-dasharray="8 7" fill="none" stroke-linecap="round" opacity="'+(focus>=0&&focus!==i?'.35':'1')+'"/>').join('');
-  const pins=plan.airports.map((point,i)=>{
+  const legs=visibleLegs.map((leg,i)=>'<path d="'+path(leg)+'" stroke="'+(focus>=0&&focus!==i?'#96b6ad':'#2f6b65')+'" stroke-width="'+(focus===i?'6':'4')+'" stroke-dasharray="8 7" fill="none" stroke-linecap="round" opacity="'+(focus>=0&&focus!==i?'.35':'1')+'"/>').join('');
+  const pins=visibleAirports.map((point,i)=>{
     const px=x(point.lon).toFixed(1),py=y(point.lat).toFixed(1);
     const dy=i===0?23:-17;
     return '<circle cx="'+px+'" cy="'+py+'" r="9" fill="#fffdf7" stroke="#20554e" stroke-width="4"/>'+
@@ -235,6 +237,7 @@ async function mountLeaflet(plan,lang,id){
     // No live plane marker. Without actual tracking data, showing a position
     // would be misleading; a route line is sufficient and clearly schematic.
     map.fitBounds(legSelection(plan,activeLeg).bounds,{padding:[34,42],maxZoom:6});
+    if(activeLeg>=0)focusLeg(activeLeg);
     requestAnimationFrame(()=>{if(id===requestId&&dialog?.open)map.invalidateSize();});
   }catch{
     // The lightweight SVG fallback remains usable if the CDN or tile service
