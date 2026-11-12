@@ -226,9 +226,7 @@ async function mountLeaflet(plan,lang,id){
       hasTiles=true;
       mapElement.classList.add('is-loaded');
     });
-    plan.legs.forEach((leg)=>{
-      L.polyline(leg,{color:'#28655c',weight:4,dashArray:'8,9',opacity:.92}).addTo(map);
-    });
+    activeLines=plan.legs.map(leg=>L.polyline(leg,{color:'#28655c',weight:4,dashArray:'8,9',opacity:.92}).addTo(map));
     plan.airports.forEach((p,i)=>{
       L.circleMarker([p.lat,p.lon],{
         radius:8,weight:3,color:'#22544e',fillColor:i===1&&plan.airports.length===3?'#f2ad7d':'#fffdf4',fillOpacity:1
@@ -236,21 +234,22 @@ async function mountLeaflet(plan,lang,id){
     });
     // No live plane marker. Without actual tracking data, showing a position
     // would be misleading; a route line is sufficient and clearly schematic.
-    map.fitBounds(planBounds(plan),{padding:[34,42],maxZoom:6});
+    map.fitBounds(legSelection(plan,activeLeg).bounds,{padding:[34,42],maxZoom:6});
     requestAnimationFrame(()=>{if(id===requestId&&dialog?.open)map.invalidateSize();});
   }catch{
     // The lightweight SVG fallback remains usable if the CDN or tile service
     // is blocked; do not claim successful tile loading.
   }
 }
-export function openRouteMap(offer,lang='ru',sourceButton=null){
-  const plan=flightPlan(offer);
-  if(!plan)return false;
+export function openRouteMap(offer,lang='ru',sourceButton=null,query=null){
+  const journey=selectedJourney(offer,query);
+  if(!journey)return false;
   const d=buildDialog();
   clearMap();lastFocus=sourceButton||document.activeElement;
-  renderDialog(offer,plan,lang);
+  activePlan=journey.plan;activeLang=lang;activeLeg=-1;
+  renderDialog(journey,lang);
   if(!d.open)d.showModal();
   const id=++requestId;
-  mountLeaflet(plan,lang,id);
+  mountLeaflet(journey.plan,lang,id);
   return true;
 }
