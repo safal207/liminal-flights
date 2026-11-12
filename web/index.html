@@ -29,9 +29,9 @@
       <section class="hero container" aria-labelledby="hero-title">
         <div class="hero-copy">
           <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✳</span> Уютный способ планировать путешествие</p>
-          <h1 id="hero-title">Не просто билет.<br><em>Ваш лучший маршрут.</em></h1>
-          <p class="hero-description">Сравнивайте не только цены. Смотрите на пересадки, багаж и время в пути — чтобы выбирать спокойно.</p>
-          <div class="hero-benefits"><span>✓ Цена за всех</span><span>✓ Понятные пересадки</span><span>✓ Без сюрпризов*</span></div>
+          <h1 id="hero-title">Найдём удобный перелёт.<br><em>Для всей семьи.</em></h1>
+          <p class="hero-description">Сравним общую стоимость, багаж, пересадки и время в пути — чтобы выбирать спокойно.</p>
+          <div class="hero-benefits"><span>✓ Цена за всех</span><span>✓ Понятные пересадки</span><span>✓ Без сюрпризов*</span></div><a class="hero-start" href="#search">Начать сравнение <span aria-hidden="true">↗</span></a>
         </div>
         <div class="hero-visual" aria-hidden="true">
           <div class="sun"></div><div class="cloud cloud-one"></div><div class="cloud cloud-two"></div>
@@ -48,7 +48,15 @@
           <form id="flight-form" novalidate>
             <div class="trip-picker" role="group" aria-label="Тип поездки">
               <label class="trip-option"><input type="radio" name="trip" value="one-way" checked><span>В одну сторону</span></label>
-              <label class="trip-option"><input type="radio" name="trip" value="round-trip"><span>Туда-обратно</span></label>
+              <label class="trip-option trip-disabled"><input type="radio" name="trip" value="round-trip" disabled><span>Туда-обратно</span><small class="trip-soon">Скоро</small></label>
+            </div>
+            <div class="choice-priority" role="group" aria-label="Что для вас важнее?">
+              <p class="priority-label">Что для вас важнее?</p>
+              <div class="choice-priority-options">
+                <button type="button" class="priority-btn is-active" data-priority="balanced" aria-pressed="true"><span aria-hidden="true">♡</span> Удобнее с детьми</button>
+                <button type="button" class="priority-btn" data-priority="cheapest" aria-pressed="false"><span aria-hidden="true">↓</span> Дешевле для всех</button>
+                <button type="button" class="priority-btn" data-priority="fastest" aria-pressed="false"><span aria-hidden="true">↗</span> Быстрее добраться</button>
+              </div>
             </div>
             <div class="search-fields">
               <div class="route-fields">
@@ -70,8 +78,9 @@
             </div>
             <datalist id="airport-options"><option value="GZP">Газипаша</option><option value="AYT">Анталья</option><option value="MOW">Москва — все аэропорты</option><option value="VKO">Внуково</option><option value="IST">Стамбул</option><option value="SVO">Шереметьево</option><option value="DME">Домодедово</option></datalist>
             <p class="sr-only" id="airport-help">Введите трёхбуквенный IATA-код города или аэропорта.</p>
-            <div class="search-bottom"><label class="bag-select">Багаж <select id="bags" name="bags" aria-label="Количество единиц регистрируемого багажа"><option value="0">Без багажа</option><option value="1">1 место</option><option value="2" selected>2 места</option><option value="3">3 места</option></select></label><button class="primary-button" type="submit"><span>Найти подходящие рейсы</span><span class="button-arrow" aria-hidden="true">↗</span></button></div>
+            <div class="search-bottom"><label class="bag-select">Багаж <select id="bags" name="bags" aria-label="Количество единиц регистрируемого багажа"><option value="0">Без багажа</option><option value="1">1 место</option><option value="2" selected>2 места</option><option value="3">3 места</option></select></label><button class="primary-button" type="submit"><span>Посмотреть примеры маршрутов</span><span class="button-arrow" aria-hidden="true">↗</span></button></div>
           </form>
+          <p class="search-demo-note"><span aria-hidden="true">ⓘ</span> Демо: билеты пока нельзя купить. Можно попробовать сравнение.</p>
         </div>
       </section>
 
@@ -80,6 +89,7 @@
         <div class="results-controls" role="group" aria-label="Сортировка предложений"><button type="button" class="sort-btn is-active" data-sort="balanced" aria-pressed="true">✳ Лучший баланс</button><button type="button" class="sort-btn" data-sort="cheapest" aria-pressed="false">↓ Дешевле</button><button type="button" class="sort-btn" data-sort="fastest" aria-pressed="false">↗ Быстрее</button></div>
         <p id="announcement" class="sr-only" aria-live="polite" aria-atomic="true"></p>
         <div id="results-list" class="results-grid"></div>
+        <section id="selected-option" class="selected-option" hidden aria-labelledby="selected-option-title"></section>
       </section>
 
       <section id="saved" class="saved-section container" aria-labelledby="saved-title"><div class="saved-inner"><div><p class="section-kicker">ВЕРНЁМСЯ К ЭТОМУ</p><h2 id="saved-title">Ваши сохранённые варианты</h2><p>Сохраняются только в этом браузере. Уведомления о реальных ценах пока не подключены.</p></div><div id="saved-list" class="saved-list"><p class="empty-saved">Здесь появятся маршруты, которые вам понравились.</p></div></div></section>

@@ -1,7 +1,24 @@
 import {MOCK_ROUTES, normalizeAirport, totalMinor, availableDemoOffers, sortOffers, formatEur, formatMinutes} from './core.mjs';
 import {language, useLanguage, initialLanguage, localizeStaticDocument, translate, airportLabel, offerCopy} from './i18n.mjs';
 import {mapText,openRouteMap} from './flight-map-ui.mjs';
+import {createLocalFunnel} from './funnel.mjs';
+import {conversionText,buildDemoShareUrl,parseDemoShare} from './conversion.mjs';
 const el=id=>document.getElementById(id);
+let funnelStorage=null;
+try{funnelStorage=window.sessionStorage;}catch{/* Tracking stays in memory in private mode. */}
+const funnel=createLocalFunnel({storage:funnelStorage,search:window.location.search});
+let debugFunnel=null;
+function track(type,fields={}){
+  const event=funnel.record(type,fields);
+  if(debugFunnel)debugFunnel();
+  return event;
+}
+track('landing_view');
+let searchIndex=0;
+let impressionObserver=null;
+const impressionKeys=new Set();
+const deepLink=parseDemoShare(window.location.search);
+let selectedOfferId=deepLink?.id||null;
 const languageStorageKey='liminal-flights-language-v1';
 let storedLanguage=null;
 try {storedLanguage=localStorage.getItem(languageStorageKey);} catch { /* Storage is optional. */ }
@@ -19,6 +36,15 @@ function validYMD(date){return /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN
 function localDate(offset=0){const d=new Date(); d.setDate(d.getDate()+offset);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 const dep=el('departure'), returnDate=el('return-date');
 dep.min=localDate();dep.value=localDate(7);returnDate.min=dep.value;returnDate.value=localDate(14);
+if(deepLink){
+  el('origin').value=deepLink.origin;
+  el('destination').value=deepLink.destination;
+  if(deepLink.date&&deepLink.date>=localDate())dep.value=deepLink.date;
+  returnDate.min=dep.value;
+  if(returnDate.value<dep.value)returnDate.value=dep.value;
+  if(deepLink.party)Object.assign(party,deepLink.party);
+  if(deepLink.bags!==undefined)el('bags').value=String(deepLink.bags);
+}
 dep.addEventListener('change',()=>{returnDate.min=dep.value;if(returnDate.value<dep.value)returnDate.value=dep.value;});
 function selectedTrip(){return form.querySelector('input[name="trip"]:checked').value;}
 for(const input of form.querySelectorAll('input[name="trip"]'))input.addEventListener('change',()=>{const isReturn=selectedTrip()==='round-trip';el('return-field').hidden=!isReturn;returnDate.required=isReturn;});
@@ -82,18 +108,18 @@ function renderSaved(){
     list.append(node);
   }
 }
-function cardHTML(offer,q){
-  const cost=totalMinor(offer,q.party,q.bags);
-  const key=saveKey(offer,q),isSaved=saved.has(key);
+function cardHTML(offer,q,rank){
+  const cost=totalMinor(offer,q.party,q.bags),key=saveKey(offer,q);
+  const isSaved=saved.has(key),selected=selectedOfferId===offer.id;
   const type=offer.protected?translate('protected'):translate('selfTransfer');
   const copy=offerCopy(offer),safe=escapeHTML;
-  const tag= '<span class="flight-tag '+safe(offer.tagClass)+'">'+safe(copy.tag)+'</span>';
+  const tag='<span class="flight-tag '+safe(offer.tagClass)+'">'+safe(copy.tag)+'</span>';
   const first='<div class="flight-time"><strong>'+safe(offer.depart)+'</strong><small>'+safe(offer.from)+'</small></div>';
   const middle='<div class="journey-line"><span>'+safe(formatMinutes(offer.minutes,language()))+
     '</span><div class="line"></div><small>'+safe(offer.stops===0?translate('nonstop'):translate('oneStop'))+'</small></div>';
   const last='<div class="flight-time"><strong>'+safe(offer.arrive)+'</strong><small>'+safe(offer.airport)+'</small></div>';
   return '<article class="flight-card '+(offer.id.includes('balanced')?'featured':'')+
-    '" data-offer="'+safe(offer.id)+'">'+
+    (selected?' is-chosen':'')+'" data-offer="'+safe(offer.id)+'" data-rank="'+rank+'">'+
     '<div class="flight-card-head">'+tag+'<span class="flight-type">'+safe(translate('mockFare'))+'</span></div>'+
     '<div class="flight-times">'+first+middle+last+'</div>'+
     '<div class="flight-attributes"><span class="'+(offer.protected?'':'warning')+'">'+safe(type)+'</span>'+
@@ -105,24 +131,68 @@ function cardHTML(offer,q){
     '<span class="flight-price">'+safe(formatEur(cost,language()))+'</span></div>'+
     '<button type="button" class="save-button" data-save="'+safe(offer.id)+'" aria-pressed="'+isSaved+'">'+
     safe(isSaved?translate('saved'):translate('save'))+'</button></div>'+
+    '<button type="button" class="choose-button" data-choose="'+safe(offer.id)+'" aria-pressed="'+selected+'">'+
+    safe(conversionText(language(),selected?'chosen':'choose'))+' <span aria-hidden="true">↗</span></button>'+
     '<p class="card-caption">'+safe(translate('mockCardCaption'))+'</p></article>';
+}
+function recordImpressions(){
+  if(impressionObserver){impressionObserver.disconnect();impressionObserver=null;}
+  if(!searchIndex||typeof IntersectionObserver!=='function')return;
+  impressionObserver=new IntersectionObserver(entries=>{
+    for(const item of entries){
+      if(!item.isIntersecting)continue;
+      const card=item.target,id=card.dataset.offer,rank=Number(card.dataset.rank);
+      const key=[searchIndex,id,rank].join(':');
+      if(!impressionKeys.has(key)){
+        impressionKeys.add(key);
+        track('offer_impression',{
+          offer_id:id,rank,origin:lastQuery.origin,destination:lastQuery.destination,
+          priority:sort,search_index:searchIndex
+        });
+      }
+      impressionObserver?.unobserve(card);
+    }
+  },{threshold:0.5});
+  for(const card of results.querySelectorAll('.flight-card'))impressionObserver.observe(card);
+}
+function renderSelection(offers){
+  const panel=el('selected-option');
+  const chosen=offers.find(o=>o.id===selectedOfferId);
+  if(!chosen){panel.hidden=true;panel.replaceChildren();return;}
+  const safe=escapeHTML,t=key=>safe(conversionText(language(),key));
+  const cost=totalMinor(chosen,lastQuery.party,lastQuery.bags);
+  panel.hidden=false;
+  panel.innerHTML='<div class="selection-heading"><div><span class="selection-eyebrow">'+t('selected')+'</span>'+
+    '<h3 id="selected-option-title">'+t('panelTitle')+'</h3></div><span class="selection-chip">'+safe(chosen.from)+' → '+safe(chosen.airport)+'</span></div>'+
+    '<div class="selection-overview"><div><small>'+t('total')+'</small><strong>'+safe(formatEur(cost,language()))+'</strong></div>'+
+    '<p>'+safe(offerCopy(chosen).note)+'</p></div>'+
+    '<p class="selection-caveat">'+t('caveat')+'</p>'+
+    '<div class="selection-actions"><button type="button" data-selected-map class="selected-map">'+t('map')+'</button>'+
+    '<button type="button" data-selected-share class="selected-share">'+t('share')+'</button></div>'+
+    '<p class="share-feedback" role="status" aria-live="polite"></p>'+
+    '<input class="share-link" aria-label="Demo URL" readonly hidden>';
 }
 function renderResults(){
   const q=lastQuery,err=validateQuery(q);
+  if(impressionObserver){impressionObserver.disconnect();impressionObserver=null;}
   results.replaceChildren();
   el('results-summary').textContent=airportLabel(q.origin)+' → '+airportLabel(q.destination)+' · '+
     (q.date||translate('missingDate'))+' · '+partyText(q.party);
-  if(err){showEmpty(translate('checkParams'),err);announce(err);return;}
+  if(err){renderSelection([]);showEmpty(translate('checkParams'),err);announce(err);return;}
   if(q.trip==='round-trip'){
+    renderSelection([]);
     showEmpty(translate('roundTripTitle'),translate('roundTripBody'));
     announce(translate('roundTripNotice'));return;
   }
   const offers=sortOffers(availableDemoOffers(q.origin,q.destination,q.trip),sort,q.party,q.bags);
   if(!offers.length){
+    renderSelection([]);
     showEmpty(translate('noDemoTitle'),translate('noDemoBody'));
     announce(translate('noDemoNotice'));return;
   }
-  results.innerHTML=offers.map(offer=>cardHTML(offer,q)).join('');
+  results.innerHTML=offers.map((offer,i)=>cardHTML(offer,q,i+1)).join('');
+  renderSelection(offers);
+  recordImpressions();
   announce(translate('found',offers.length));
 }
 function partyText(p){return translate('countPassengers',p.adults+p.children+p.infants);}
@@ -136,7 +206,22 @@ results.addEventListener('click',event=>{
   const mapButton=event.target.closest('[data-map]');
   if(mapButton){
     const offer=MOCK_ROUTES.find(item=>item.id===mapButton.dataset.map);
-    if(offer)openRouteMap(offer,language(),mapButton,lastQuery);
+    if(offer&&openRouteMap(offer,language(),mapButton,lastQuery)){
+      track('map_opened',{offer_id:offer.id,rank:Number(mapButton.closest('[data-rank]')?.dataset.rank)||0,search_index:searchIndex});
+    }
+    return;
+  }
+  const chooseButton=event.target.closest('[data-choose]');
+  if(chooseButton){
+    const offer=MOCK_ROUTES.find(item=>item.id===chooseButton.dataset.choose);
+    if(!offer)return;
+    selectedOfferId=offer.id;
+    track('offer_selected',{
+      offer_id:offer.id,rank:Number(chooseButton.closest('[data-rank]')?.dataset.rank)||0,
+      origin:lastQuery.origin,destination:lastQuery.destination,priority:sort,search_index:searchIndex
+    });
+    renderResults();
+    announce(conversionText(language(),'selected'));
     return;
   }
   const btn=event.target.closest('[data-save]');
@@ -148,13 +233,92 @@ results.addEventListener('click',event=>{
   if(saved.has(key)){saved.delete(key);notice=translate('unsaved');}
   else{
     saved.set(key,{key,route:offer.from+' → '+offer.airport,date:lastQuery.date});
+    track('offer_saved',{offer_id:offer.id,search_index:searchIndex});
     notice=translate('saveNotice');
   }
   if(!storageWrite())notice=translate('storageDenied');
   renderSaved();renderResults();announce(notice);
 });
-form.addEventListener('submit',event=>{event.preventDefault();setPanel(false);lastQuery=currentQuery();renderResults();el('results').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});});
-for(const btn of document.querySelectorAll('.sort-btn'))btn.addEventListener('click',()=>{sort=btn.dataset.sort;for(const item of document.querySelectorAll('.sort-btn')){const active=item===btn;item.classList.toggle('is-active',active);item.setAttribute('aria-pressed',String(active));}renderResults();});
+el('selected-option').addEventListener('click',async event=>{
+  const chosen=MOCK_ROUTES.find(offer=>offer.id===selectedOfferId);
+  if(!chosen)return;
+  const mapButton=event.target.closest('[data-selected-map]');
+  if(mapButton){
+    if(openRouteMap(chosen,language(),mapButton,lastQuery)){
+      track('map_opened',{offer_id:chosen.id,search_index:searchIndex});
+    }
+    return;
+  }
+  const shareButton=event.target.closest('[data-selected-share]');
+  if(!shareButton)return;
+  let url;
+  try{url=buildDemoShareUrl(window.location.href,chosen,lastQuery);}catch{return;}
+  const info=conversionText(language(),'shareIntro')+': '+chosen.from+' → '+chosen.airport;
+  let shared=false;
+  try{
+    if(typeof navigator.share==='function'){
+      await navigator.share({title:'Liminal Flights',text:info,url});
+      shared=true;
+    }else if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(info+' · '+url);
+      shared=true;
+    }
+  }catch{/* Canceled share or unavailable clipboard. */}
+  const panel=el('selected-option');
+  if(panel.hidden)return;
+  const message=panel.querySelector('.share-feedback'),field=panel.querySelector('.share-link');
+  if(shared){
+    track('offer_shared',{offer_id:chosen.id,search_index:searchIndex});
+    message.textContent=conversionText(language(),'shared');
+    field.hidden=true;
+  }else{
+    message.textContent=conversionText(language(),'shareFailed');
+    field.hidden=false;
+    field.value=url;
+    field.focus();
+    field.select();
+  }
+});
+form.addEventListener('submit',event=>{
+  event.preventDefault();setPanel(false);
+  lastQuery=currentQuery();
+  const error=validateQuery(lastQuery);
+  if(error||lastQuery.trip!=='one-way'){
+    track('search_invalid',{reason:error?'invalid_form':'unsupported_trip'});
+    renderResults();return;
+  }
+  selectedOfferId=null;
+  searchIndex++;
+  impressionKeys.clear();
+  track('search_submitted',{
+    search_index:searchIndex,origin:lastQuery.origin,destination:lastQuery.destination,
+    trip:lastQuery.trip,priority:sort,
+    passengers:lastQuery.party.adults+lastQuery.party.children+lastQuery.party.infants,
+    bags:lastQuery.bags
+  });
+  renderResults();
+  el('results').scrollIntoView({
+    behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',
+    block:'start'
+  });
+});
+function setSort(next,byUser=false){
+  if(!['balanced','cheapest','fastest'].includes(next))return;
+  sort=next;
+  for(const item of document.querySelectorAll('.sort-btn, .priority-btn')){
+    const active=(item.dataset.sort||item.dataset.priority)===sort;
+    item.classList.toggle('is-active',active);
+    item.setAttribute('aria-pressed',String(active));
+  }
+  if(byUser)track('priority_selected',{priority:sort});
+  renderResults();
+}
+for(const btn of document.querySelectorAll('.sort-btn')){
+  btn.addEventListener('click',()=>setSort(btn.dataset.sort,true));
+}
+for(const btn of document.querySelectorAll('.priority-btn')){
+  btn.addEventListener('click',()=>setSort(btn.dataset.priority,true));
+}
 
 function updateLanguageButtons(){
   for(const btn of document.querySelectorAll('[data-language]')){
@@ -172,11 +336,62 @@ function switchLanguage(next){
   updateParty();
   renderSaved();
   renderResults();
+  if(debugFunnel)debugFunnel();
   announce(translate('langChanged'));
 }
 for(const btn of document.querySelectorAll('[data-language]')){
   btn.addEventListener('click',()=>switchLanguage(btn.dataset.language));
 }
 
+function installLocalDebug(){
+  if(new URLSearchParams(window.location.search).get('lf_debug')!=='1')return;
+  const panel=document.createElement('aside');
+  panel.className='local-funnel-debug container';
+  panel.setAttribute('aria-label','Local browser funnel debugging');
+  panel.addEventListener('click',event=>{
+    if(!event.target.closest('[data-export-funnel]'))return;
+    const report={
+      kind:'browser-session-only',
+      collected_at:new Date().toISOString(),
+      summary:funnel.summary(),
+      events:funnel.events()
+    };
+    const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.download='liminal-flights-local-funnel.json';
+    link.href=url;document.body.append(link);link.click();link.remove();
+    URL.revokeObjectURL(url);
+  });
+  debugFunnel=()=>{
+    const t=key=>conversionText(language(),key);
+    const counts=funnel.summary().events;
+    panel.replaceChildren();
+    const title=document.createElement('h2');
+    title.textContent=t('debugTitle');
+    const explanation=document.createElement('p');
+    explanation.textContent=t('debugHint');
+    const figures=document.createElement('div');
+    figures.className='debug-figures';
+    for(const [key,count] of [
+      ['debugSearch',counts.search_submitted],
+      ['debugImpressions',counts.offer_impression],
+      ['debugSelected',counts.offer_selected],
+      ['debugPartner',null],
+      ['debugOrders',null]
+    ]){
+      const item=document.createElement('div'),name=document.createElement('small'),value=document.createElement('strong');
+      name.textContent=t(key);
+      value.textContent=count===null?t('debugUnavailable'):String(count);
+      item.append(name,value);figures.append(item);
+    }
+    const exportButton=document.createElement('button');
+    exportButton.type='button';
+    exportButton.dataset.exportFunnel='';
+    exportButton.textContent=t('debugExport');
+    panel.append(title,explanation,figures,exportButton);
+  };
+  document.body.append(panel);debugFunnel();
+}
 updateLanguageButtons();
 renderSaved();renderResults();
+installLocalDebug();

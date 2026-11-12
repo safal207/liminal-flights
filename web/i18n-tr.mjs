@@ -2,6 +2,17 @@
 // Copy is reviewed independently of supplier prices; no live fares are implied.
 
 export const staticTr = Object.freeze({
+  'Найдём удобный перелёт.': 'Rahat bir uçuş bulalım.',
+  'Для всей семьи.': 'Tüm aile için.',
+  'Сравним общую стоимость, багаж, пересадки и время в пути — чтобы выбирать спокойно.': 'Toplam ücreti, bagajı, aktarmaları ve yolculuk süresini rahatça karşılaştırın.',
+  'Начать сравнение': 'Karşılaştırmaya başla',
+  'Скоро': 'Yakında',
+  'Что для вас важнее?': 'Sizin için en önemlisi ne?',
+  'Удобнее с детьми': 'Çocuklarla daha rahat',
+  'Дешевле для всех': 'Herkes için daha ucuz',
+  'Быстрее добраться': 'Daha hızlı ulaşın',
+  'Посмотреть примеры маршрутов': 'Örnek rotaları incele',
+  'Демо: билеты пока нельзя купить. Можно попробовать сравнение.': 'Yalnızca demo: Henüz bilet satın alınamıyor. Karşılaştırmayı deneyebilirsiniz.',
   'Перейти к поиску': 'Aramaya geç',
   'Liminal Flights — на главную': 'Liminal Flights — ana sayfa',
   'умный путь домой и дальше': 'yolculuğunuz için akıllı seçenekler',

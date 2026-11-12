@@ -72,6 +72,34 @@ The **View map / На карте / Haritada gör** action is tied to the *select
 - RU/EN/TR translations and 44px targets work in the map's mobile bottom sheet, with reduced-motion and offline fallback.
 - The map is synthetic preview only; real monitoring requires approved source permissions and a verified flight identity. See [Flight tracking gate](../docs/FLIGHT_MAP_AND_TRACKING.md).
 
+## Family-first conversion MVP and safe funnel debugging
+
+A lighter first screen asks which outcome matters most:
+comfortable travel with children, lower group cost or faster arrival. The
+three choices synchronize with result sorting without a fare recalculation.
+The round-trip control is disabled with Coming soon text until the mode
+has actual implemented offers. The main CTA explicitly opens **sample**
+itineraries (not a ticket search or checkout).
+
+Cards now have a visible **Choose sample** action. It highlights the
+selected route and reveals a summary of group price, risk, quick map action
+and a one-tap native share/copy flow with a link to the same mock route.
+Every selected route and price remains labelled fictional and unbookable.
+
+A dependency-free local analytics contract records first-screen visits,
+user-initiated searches, visible card impressions, card selections, map
+opens, saves and successful shares with a limited UTM allowlist.
+This is a privacy-first **browser-session-only** prototype — no remote
+requests, no visitor identifiers, and no claim to aggregate other visitors.
+To inspect it, visit the site with ?lf_debug=1 (add the query to the URL),
+then download the current tab's JSON session log.
+
+Never treat UI clicks as booked tickets: outbound partner clicks,
+confirmed bookings, commissions and refunds require written supplier
+rights and a trusted server-side reconciliation. See
+[conversion/revenue contract](../docs/CONVERSION_FUNNEL.md).
+
+
 ## UI priorities
 
 - Warm, calm visual language; no large blocking hero art on mobile.
@@ -79,7 +107,7 @@ The **View map / На карте / Haritada gör** action is tied to the *select
 - Large tap targets (44px minimum on mobile), visible keyboard focus, predictable state and reduced-motion support.
 - Three ranking modes, price for the **full passenger group**, honest self-transfer warnings.
 - Local-only saved searches; no false promise of push or commercial bookings.
-- No external fonts, analytics tracking or image dependencies in the initial search page. The optional on-demand map uses Leaflet / OSM; maintain static asset URLs relative to `web/` for GitHub Pages subpath compatibility.
+- No external fonts, remote analytics beacons or image dependencies in the initial search page. The optional on-demand map uses Leaflet / OSM; maintain static asset URLs relative to `web/` for GitHub Pages subpath compatibility.
 
 ## Verify
 
