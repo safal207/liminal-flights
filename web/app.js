@@ -336,11 +336,62 @@ function switchLanguage(next){
   updateParty();
   renderSaved();
   renderResults();
+  if(debugFunnel)debugFunnel();
   announce(translate('langChanged'));
 }
 for(const btn of document.querySelectorAll('[data-language]')){
   btn.addEventListener('click',()=>switchLanguage(btn.dataset.language));
 }
 
+function installLocalDebug(){
+  if(new URLSearchParams(window.location.search).get('lf_debug')!=='1')return;
+  const panel=document.createElement('aside');
+  panel.className='local-funnel-debug container';
+  panel.setAttribute('aria-label','Local browser funnel debugging');
+  panel.addEventListener('click',event=>{
+    if(!event.target.closest('[data-export-funnel]'))return;
+    const report={
+      kind:'browser-session-only',
+      collected_at:new Date().toISOString(),
+      summary:funnel.summary(),
+      events:funnel.events()
+    };
+    const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.download='liminal-flights-local-funnel.json';
+    link.href=url;document.body.append(link);link.click();link.remove();
+    URL.revokeObjectURL(url);
+  });
+  debugFunnel=()=>{
+    const t=key=>conversionText(language(),key);
+    const counts=funnel.summary().events;
+    panel.replaceChildren();
+    const title=document.createElement('h2');
+    title.textContent=t('debugTitle');
+    const explanation=document.createElement('p');
+    explanation.textContent=t('debugHint');
+    const figures=document.createElement('div');
+    figures.className='debug-figures';
+    for(const [key,count] of [
+      ['debugSearch',counts.search_submitted],
+      ['debugImpressions',counts.offer_impression],
+      ['debugSelected',counts.offer_selected],
+      ['debugPartner',null],
+      ['debugOrders',null]
+    ]){
+      const item=document.createElement('div'),name=document.createElement('small'),value=document.createElement('strong');
+      name.textContent=t(key);
+      value.textContent=count===null?t('debugUnavailable'):String(count);
+      item.append(name,value);figures.append(item);
+    }
+    const exportButton=document.createElement('button');
+    exportButton.type='button';
+    exportButton.dataset.exportFunnel='';
+    exportButton.textContent=t('debugExport');
+    panel.append(title,explanation,figures,exportButton);
+  };
+  document.body.append(panel);debugFunnel();
+}
 updateLanguageButtons();
 renderSaved();renderResults();
+installLocalDebug();
