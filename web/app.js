@@ -136,7 +136,7 @@ results.addEventListener('click',event=>{
   const mapButton=event.target.closest('[data-map]');
   if(mapButton){
     const offer=MOCK_ROUTES.find(item=>item.id===mapButton.dataset.map);
-    if(offer)openRouteMap(offer,language(),mapButton);
+    if(offer)openRouteMap(offer,language(),mapButton,lastQuery);
     return;
   }
   const btn=event.target.closest('[data-save]');
