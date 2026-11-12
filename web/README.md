@@ -63,6 +63,15 @@ node --check web/flight-map.mjs
 node --check web/flight-map-ui.mjs
 ```
 
+## Personal journey map
+
+The **View map / На карте / Haritada gör** action is tied to the *selected search result*, not a global flight map. It carries forward the search date and party size without treating them as a confirmed ticket or flight occurrence.
+
+- Select **Entire route** or an individual segment; the approximate path and displayed distance update together (Leaflet if available, local SVG fallback otherwise).
+- The flight-status panel explicitly says **no flight data received**, **delay unknown**, **current aircraft position unavailable**, and **last update: no data**. It never substitutes the current browser time as an observation timestamp.
+- RU/EN/TR translations and 44px targets work in the map's mobile bottom sheet, with reduced-motion and offline fallback.
+- The map is synthetic preview only; real monitoring requires approved source permissions and a verified flight identity. See [Flight tracking gate](../docs/FLIGHT_MAP_AND_TRACKING.md).
+
 ## UI priorities
 
 - Warm, calm visual language; no large blocking hero art on mobile.
